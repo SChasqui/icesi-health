@@ -16,6 +16,9 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.text.get
+import java.io.BufferedReader
+import java.io.InputStreamReader
+
 
 object Files : Table("files") {
     val id = integer("id")
@@ -55,11 +58,26 @@ fun saveFileInDB(pName: String, pType: String) {
 }
 
 fun main(args: Array<String>) {
+    //var folderPath = System.
+/*    var gitStat: Process = Runtime.getRuntime().exec("df -h /home/santiago/Documents/University/")
+    val input = BufferedReader(InputStreamReader(gitStat.getInputStream()))
+    var line: String;
+    line = input.readLine()
+    System.out.println(line)
+    input.close()*/
+
+
+
     initDB()
     embeddedServer(Netty, 8080) {
         routing {
             get("/") {
                 call.respondText(getFilesData(), ContentType.Text.Plain)
+            }
+
+            get("/avstorage") {
+                val file = java.io.File("/boot/efi").usableSpace/1024/1024/1024
+                call.respondText(file.toString() + " GB", ContentType.Text.Plain)
             }
 
             get("/{name}") {
