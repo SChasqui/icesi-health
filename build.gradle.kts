@@ -37,3 +37,13 @@ dependencies {
     implementation(group = "com.google.code.gson", name = "gson", version = "2.8.1")
     testImplementation(group = "junit", name = "junit", version = "4.12")
 }
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "com.example.ApplicationKt"
+    }
+    configurations["compileClasspath"].forEach { file: File ->
+        from(zipTree(file.absoluteFile))
+    }
+}
+

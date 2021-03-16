@@ -56,82 +56,70 @@ fun saveFileInDB(pName: String, pType: String) {
         }
     }
 }
+fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
-fun main(args: Array<String>) {
-    //var folderPath = System.
-/*    var gitStat: Process = Runtime.getRuntime().exec("df -h /home/santiago/Documents/University/")
-    val input = BufferedReader(InputStreamReader(gitStat.getInputStream()))
-    var line: String;
-    line = input.readLine()
-    System.out.println(line)
-    input.close()*/
-
-
-
+fun Application.module(testing: Boolean = false) {
     initDB()
-    embeddedServer(Netty, 8080) {
-        routing {
-            get("/") {
-                call.respondText(getFilesData(), ContentType.Text.Plain)
+
+    routing {
+        get("/") {
+            call.respondText(getFilesData(), ContentType.Text.Plain)
+        }
+
+        get("/avstorage") {
+            val file = java.io.File("/boot/efi").usableSpace/1024/1024/1024
+            call.respondText(file.toString() + " GB", ContentType.Text.Plain)
+        }
+
+        get("/{name}") {
+            // get filename from request url
+            val filename = call.parameters["name"]!!
+            // construct reference to file
+            // ideally this would use a different filename
+            val file = java.io.File("./uploads/$filename")
+            //Force browser to download insteda of prompt
+            call.response.header("Content-Disposition", "attachment; filename=\"${file.name}\"")
+            if(file.exists()) {
+                call.respondFile(file)
             }
-
-            get("/avstorage") {
-                val file = java.io.File("/boot/efi").usableSpace/1024/1024/1024
-                call.respondText(file.toString() + " GB", ContentType.Text.Plain)
-            }
-
-            get("/{name}") {
-                // get filename from request url
-                val filename = call.parameters["name"]!!
-                // construct reference to file
-                // ideally this would use a different filename
-                val file = java.io.File("./uploads/$filename")
-                //Force browser to download insteda of prompt
-                call.response.header("Content-Disposition", "attachment; filename=\"${file.name}\"")
-                if(file.exists()) {
-                    call.respondFile(file)
-                }
-                else call.respond(HttpStatusCode.NotFound)
-            }
+            else call.respond(HttpStatusCode.NotFound)
+        }
 
 
-            post("/uploads"){
-                // retrieve all multipart data (suspending)
-                val multipart = call.receiveMultipart()
-                var nameResponse: String = ""
-                var typeResponse: String = ""
-                multipart.forEachPart { part ->
-                    // if part is a file (could be form item)
-                    if(part is PartData.FileItem) {
-                        // retrieve file name of upload
-                        val name = part.originalFileName!!
-                        
-                        val file = java.io.File("./uploads/$name")
-                        nameResponse = name
-                        typeResponse = name.substringAfterLast('.', "")
+        post("/uploads"){
+            // retrieve all multipart data (suspending)
+            val multipart = call.receiveMultipart()
+            var nameResponse: String = ""
+            var typeResponse: String = ""
+            multipart.forEachPart { part ->
+                // if part is a file (could be form item)
+                if(part is PartData.FileItem) {
+                    // retrieve file name of upload
+                    val name = part.originalFileName!!
 
-                        // use InputStream from part to save file
-                        part.streamProvider().use { its ->
-                            // copy the stream to the file with buffering
-                            file.outputStream().buffered().use {
-                                // note that this is blocking
-                                its.copyTo(it)
-                            }
+                    val file = java.io.File("./uploads/$name")
+                    nameResponse = name
+                    typeResponse = name.substringAfterLast('.', "")
+
+                    // use InputStream from part to save file
+                    part.streamProvider().use { its ->
+                        // copy the stream to the file with buffering
+                        file.outputStream().buffered().use {
+                            // note that this is blocking
+                            its.copyTo(it)
                         }
                     }
-                    // make sure to dispose of the part after use to prevent leaks
-                    part.dispose()
                 }
-                saveFileInDB(nameResponse, typeResponse)
-                call.respondText("Archivo cargado exitosamente", ContentType.Text.Plain)
+                // make sure to dispose of the part after use to prevent leaks
+                part.dispose()
             }
-
-
+            saveFileInDB(nameResponse, typeResponse)
+            call.respondText("Archivo cargado exitosamente", ContentType.Text.Plain)
         }
 
-        routing{
 
-        }
-    }.start(wait = true)
+    }
 }
+
+
 
