@@ -2,6 +2,7 @@ package com.example
 
 import com.google.gson.Gson
 import io.ktor.application.*
+import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.ContentDisposition.Companion.File
 import io.ktor.http.content.*
@@ -18,6 +19,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.text.get
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.time.Duration
 
 
 object Files : Table("files") {
@@ -29,9 +31,9 @@ object Files : Table("files") {
 data class MyFiles(val id: Int, val name: String, val path: String, val type: String)
 
 fun initDB() {
-    val url = "jdbc:mysql://192.168.33.100:3306/icesihealth"
+    val url = "jdbc:mysql://localhost:3306/icesihealth"
     val driver = "com.mysql.cj.jdbc.Driver"
-    Database.connect(url, driver, "dbuser","password")
+    Database.connect(url, driver, "root","password")
 }
 
 fun getFilesData(): String {
@@ -59,6 +61,19 @@ fun saveFileInDB(pName: String, pType: String) {
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module(testing: Boolean = false) {
+
+    install(CORS)
+    {
+        method(HttpMethod.Options)
+        header(HttpHeaders.XForwardedProto)
+        anyHost()
+        // host("my-host:80")
+        // host("my-host", subDomains = listOf("www"))
+        // host("my-host", schemes = listOf("http", "https"))
+        allowCredentials = true
+        allowNonSimpleContentTypes = true
+        maxAge = Duration.ofDays(1)
+    }
     initDB()
 
     routing {
