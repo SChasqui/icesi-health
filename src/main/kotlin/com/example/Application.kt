@@ -21,6 +21,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.time.Duration
 
+val pathStorage: String = "/home/santiago/Documents/University/distribuidos/"
 
 object Files : Table("files") {
     val id = integer("id")
@@ -31,9 +32,9 @@ object Files : Table("files") {
 data class MyFiles(val id: Int, val name: String, val path: String, val type: String)
 
 fun initDB() {
-    val url = "jdbc:mysql://localhost:3306/icesihealth"
+    val url = "jdbc:mysql://192.168.33.100:3306/icesihealth"
     val driver = "com.mysql.cj.jdbc.Driver"
-    Database.connect(url, driver, "root","password")
+    Database.connect(url, driver, "dbuser","password")
 }
 
 fun getFilesData(): String {
@@ -53,7 +54,7 @@ fun saveFileInDB(pName: String, pType: String) {
     transaction {
         Files.insert {
             it[name] = pName
-            it[path] = "/test/"
+            it[path] = pathStorage
             it[type] = pType
         }
     }
@@ -72,7 +73,7 @@ fun Application.module(testing: Boolean = false) {
         // host("my-host", schemes = listOf("http", "https"))
         allowCredentials = true
         allowNonSimpleContentTypes = true
-        maxAge = Duration.ofDays(1)
+        maxAge = Duration.ofDays(30)
     }
     initDB()
 
@@ -82,7 +83,7 @@ fun Application.module(testing: Boolean = false) {
         }
 
         get("/avstorage") {
-            val file = java.io.File("/boot/efi").usableSpace/1024/1024/1024
+            val file = java.io.File(pathStorage).usableSpace/1024/1024/1024
             call.respondText(file.toString() + " GB", ContentType.Text.Plain)
         }
 
@@ -91,7 +92,7 @@ fun Application.module(testing: Boolean = false) {
             val filename = call.parameters["name"]!!
             // construct reference to file
             // ideally this would use a different filename
-            val file = java.io.File("./uploads/$filename")
+            val file = java.io.File(pathStorage+ "/"+ filename)
             //Force browser to download insteda of prompt
             call.response.header("Content-Disposition", "attachment; filename=\"${file.name}\"")
             if(file.exists()) {
@@ -112,7 +113,7 @@ fun Application.module(testing: Boolean = false) {
                     // retrieve file name of upload
                     val name = part.originalFileName!!
 
-                    val file = java.io.File("./uploads/$name")
+                    val file = java.io.File(pathStorage +"/"+name)
                     nameResponse = name
                     typeResponse = name.substringAfterLast('.', "")
 
