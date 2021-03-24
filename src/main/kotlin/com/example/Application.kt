@@ -3,6 +3,7 @@ package com.example
 import com.google.gson.Gson
 import io.ktor.application.*
 import io.ktor.features.*
+import io.ktor.gson.*
 import io.ktor.http.*
 import io.ktor.http.ContentDisposition.Companion.File
 import io.ktor.http.content.*
@@ -11,17 +12,14 @@ import io.ktor.request.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.text.get
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.time.Duration
 
-val pathStorage: String = "/home/santiago/Documents/University/distribuidos/"
+val pathStorage: String = "/data/shared"
 
 object Files : Table("files") {
     val id = integer("id")
@@ -32,7 +30,7 @@ object Files : Table("files") {
 data class MyFiles(val id: Int, val name: String, val path: String, val type: String)
 
 fun initDB() {
-    val url = "jdbc:mysql://192.168.33.100:3306/icesihealth"
+    val url = "jdbc:mysql://192.168.33.200:3306/icesihealth"
     val driver = "com.mysql.cj.jdbc.Driver"
     Database.connect(url, driver, "dbuser","password")
 }
@@ -50,6 +48,23 @@ fun getFilesData(): String {
     return json
 }
 
+fun deleteFileInDB(id: Int) {
+    transaction {
+        Files.deleteWhere { Files.id eq id }
+    }
+}
+
+fun putFileInDB(id: Int, newFile: MyFiles) {
+    transaction {
+        Files.update({Files.id eq id}){
+            it[name] = newFile.name.toString()
+            it[path] = newFile.path.toString()
+            it[type] = newFile.type.toString()
+
+        }
+    }
+}
+
 fun saveFileInDB(pName: String, pType: String) {
     transaction {
         Files.insert {
@@ -63,6 +78,11 @@ fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module(testing: Boolean = false) {
 
+    install(ContentNegotiation) {
+        gson {
+            setPrettyPrinting()
+        }
+    }
     install(CORS)
     {
         method(HttpMethod.Options)
@@ -99,6 +119,21 @@ fun Application.module(testing: Boolean = false) {
                 call.respondFile(file)
             }
             else call.respond(HttpStatusCode.NotFound)
+        }
+
+        delete("/{id}") {
+            val id: Int = call.parameters["id"]!!.toInt()
+            deleteFileInDB(id)
+            call.respondText("Se ha eliminado el archivo")
+        }
+
+        put("/{id}") {
+            val body = call.receive<MyFiles>()
+            val id: Int = call.parameters["id"]!!.toInt()
+            putFileInDB(id, body)
+            println("Archivo: ${body.name.toString()}")
+            call.respondText("post received", contentType =
+            ContentType.Text.Plain)
         }
 
 

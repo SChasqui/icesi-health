@@ -35,6 +35,7 @@ dependencies {
     implementation(group = "mysql", name = "mysql-connector-java", version = "6.0.6")
     implementation(group = "org.slf4j", name = "slf4j-simple", version = "1.7.25")
     implementation(group = "com.google.code.gson", name = "gson", version = "2.8.1")
+    implementation("io.ktor:ktor-gson:$ktor_version")
     testImplementation(group = "junit", name = "junit", version = "4.12")
 }
 
