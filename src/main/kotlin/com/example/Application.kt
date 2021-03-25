@@ -30,7 +30,7 @@ object Files : Table("files") {
 data class MyFiles(val id: Int, val name: String, val path: String, val type: String)
 
 fun initDB() {
-    val url = "jdbc:mysql://192.168.33.200:3306/icesihealth"
+    val url = "jdbc:mysql://192.168.33.100:3306/icesihealth"
     val driver = "com.mysql.cj.jdbc.Driver"
     Database.connect(url, driver, "dbuser","password")
 }
